@@ -9,12 +9,19 @@
 #pragma once
 
 #include <JuceHeader.h>
+enum Slope
+{
+    Slope_12,
+    Slope_24,
+    Slope_36,
+    Slope_48
 
+};
 struct ChainSettings
 {
     float peakFreq{ 0.0f }, peakGainInDecibels{ 0.0f }, peakQuality{ 1.f };
     float lowCutFreq{ 0.0f }, highCutFreq{ 0.0f };
-    int lowCutSlope{ 0 }, highCutSlope{ 0 };
+    Slope lowCutSlope{ Slope::Slope_12 }, highCutSlope{ Slope::Slope_12 };
 };
 
 ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts);
@@ -79,6 +86,10 @@ private:
         Peak,
         HighCut
     };
+
+    void updatePeakFilter(const ChainSettings& chainSettings);
+    using Coefficients = Filter::CoefficientsPtr;
+    static void updateCoefficients(Coefficients& old, Coefficients& replacements);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessor)
 };
