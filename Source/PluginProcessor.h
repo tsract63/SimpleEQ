@@ -9,7 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-enum Slope
+enum class Slope
 {
     Slope_12,
     Slope_24,
@@ -108,18 +108,31 @@ private:
 
         switch (slope)
         {
-        case Slope_48:
-            update<3>(leftLowCut, cutCoefficients);
-        case Slope_36:
-            update<2>(leftLowCut, cutCoefficients);
-        case Slope_24:
-            update<1>(leftLowCut, cutCoefficients);
-        case Slope_12:
-            update<0>(leftLowCut, cutCoefficients);
-            break;
+        case Slope::Slope_48:
+            {
+                update<3>(leftLowCut, cutCoefficients);
+            }
+        case Slope::Slope_36:
+            {
+                update<2>(leftLowCut, cutCoefficients);
+            }
+        case Slope::Slope_24:
+            {
+                update<1>(leftLowCut, cutCoefficients);
+            }
+        case Slope::Slope_12:
+            {
+                update<0>(leftLowCut, cutCoefficients);
+            }
+           
         }
 
     }
+
+    void updateLowCutFilters(const ChainSettings& chainSettings);
+    void updateHighCutFilters(const ChainSettings& chainSettings);
+
+    void upateFilters();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessor)
 };
