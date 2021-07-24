@@ -9,6 +9,8 @@
 #pragma once
 
 #include <JuceHeader.h>
+
+
 enum class Slope
 {
     Slope_12,
@@ -34,6 +36,16 @@ public:
     //==============================================================================
     SimpleEQAudioProcessor();
     ~SimpleEQAudioProcessor() override;
+
+
+    static juce::String paramPeakFreq;
+    static juce::String paramPeakGain;
+    static juce::String paramLowCutFreq;
+    static juce::String paramHighCutFreq;
+    static juce::String paramPeakQuality;
+    static juce::String paramLowCutSlope;
+    static juce::String paramHighCutSlope;
+    
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
