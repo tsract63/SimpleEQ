@@ -156,6 +156,13 @@ void ResponseCurveComponent::timerCallback()
 SimpleEQAudioProcessorEditor::SimpleEQAudioProcessorEditor(SimpleEQAudioProcessor& p)
 	: AudioProcessorEditor(&p), audioProcessor(p),
 	responseCurveComponent(p),
+	peakFreqSlider(*audioProcessor.apvts.getParameter(audioProcessor.paramPeakFreq), "Hz"),
+	peakGainSlider(*audioProcessor.apvts.getParameter(audioProcessor.paramPeakGain), "dB"),
+	peakQualitySlider(*audioProcessor.apvts.getParameter(audioProcessor.paramPeakQuality), ""),
+	lowCutFreqSlider(*audioProcessor.apvts.getParameter(audioProcessor.paramLowCutFreq), "Hz"),
+	highCutFreqSlider(*audioProcessor.apvts.getParameter(audioProcessor.paramHighCutFreq), "Hz"),
+	lowCutSlopeSlider(*audioProcessor.apvts.getParameter(audioProcessor.paramLowCutSlope), "db/Oct"),
+	highCutSlopeSlider(*audioProcessor.apvts.getParameter(audioProcessor.paramHighCutSlope), "db/Oct"),
 	peakFreqSliderAttachment(audioProcessor.apvts, audioProcessor.paramPeakFreq, peakFreqSlider),
 	peakGainSliderAttachment(audioProcessor.apvts, audioProcessor.paramPeakGain, peakGainSlider),
 	peakQualitySliderAttachment(audioProcessor.apvts, audioProcessor.paramPeakQuality, peakQualitySlider),
