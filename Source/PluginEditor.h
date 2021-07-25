@@ -12,13 +12,42 @@
 #include "PluginProcessor.h"
 
 
-struct CustomRotarySlider : public juce::Slider
+struct LookAndFeel : public juce::LookAndFeel_V4
 {
-    CustomRotarySlider() : juce::Slider( juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-                                         juce::Slider::TextEntryBoxPosition::NoTextBox)
+    void drawRotarySlider(juce::Graphics&,
+        int x,
+        int y,
+        int width,
+        int height,
+        float sliderPosPrportional,
+        float rotaryAngle,
+        float endAngle,
+        juce::Slider&) override {}
+};
+
+struct RotarySliderWithLabels : public juce::Slider
+{
+    RotarySliderWithLabels( juce::RangedAudioParameter& rap, const juce::String& unitSuffix) : 
+        juce::Slider( juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag, juce::Slider::TextEntryBoxPosition::NoTextBox),
+        param(&rap),
+        Suffix(unitSuffix)
     {
-            
+        setLookAndFeel(&lnf);
     }
+
+    ~RotarySliderWithLabels()
+    {
+        setLookAndFeel(nullptr);
+    }
+
+    void paint(juce::Graphics&) override {};
+    juce::Rectangle<int> getSliderBounds() const;
+    int getTextHeight() const { return 14; }
+    juce::String getDisplayString() const;
+private:
+    LookAndFeel lnf;
+    juce::RangedAudioParameter* param;
+    juce::String Suffix;
 };
 
 struct ResponseCurveComponent : public juce::Component,
@@ -60,7 +89,7 @@ private:
     SimpleEQAudioProcessor& audioProcessor;
 
 
-    CustomRotarySlider
+    RotarySliderWithLabels
         peakFreqSlider,
         peakGainSlider,
         peakQualitySlider,
