@@ -24,7 +24,7 @@ struct RotarySliderWithLabels : public juce::Slider
     RotarySliderWithLabels( juce::RangedAudioParameter& rap, const juce::String& unitSuffix) : 
         juce::Slider( juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag, juce::Slider::TextEntryBoxPosition::NoTextBox),
         param(&rap),
-        Suffix(unitSuffix)
+        suffix(unitSuffix)
     {
         setLookAndFeel(&lnf);
     }
@@ -41,7 +41,7 @@ struct RotarySliderWithLabels : public juce::Slider
 private:
     LookAndFeel lnf;
     juce::RangedAudioParameter* param;
-    juce::String Suffix;
+    juce::String suffix;
 };
 
 struct ResponseCurveComponent : public juce::Component,
