@@ -29,25 +29,42 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g,
 	g.setColour(Colour(255u, 154u, 1u));
 	g.drawEllipse(bounds, 1.f);
 
-	auto center = bounds.getCentre();
+	if (auto* rswl = dynamic_cast<RotarySliderWithLabels*>(&slider))
+	{
+		auto center = bounds.getCentre();
 
-	Path p;
+		Path p;
 
-	Rectangle<float>r;
-	r.setLeft(center.getX() - 2);
-	r.setRight(center.getX() + 2);
-	r.setTop(bounds.getY());
-	r.setBottom(center.getY());
-
-	p.addRectangle(r);
-
-	jassert(rotaryStartAngle < endAngle);
-
-	auto sliderAngRad = jmap(sliderPosPrportional, 0.0f, 1.f, rotaryStartAngle, endAngle);
-	p.applyTransform(AffineTransform().rotated(sliderAngRad, center.getX(), center.getY()));
+		Rectangle<float>r;
+		r.setLeft(center.getX() - 2);
+		r.setRight(center.getX() + 2);
+		r.setTop(bounds.getY());
+		r.setBottom(center.getY() - rswl->getTextHeight() * 1.5);
 
 
-	g.fillPath(p);
+		p.addRoundedRectangle(r, 2.f);
+
+		jassert(rotaryStartAngle < endAngle);
+
+		auto sliderAngRad = jmap(sliderPosPrportional, 0.0f, 1.f, rotaryStartAngle, endAngle);
+		p.applyTransform(AffineTransform().rotated(sliderAngRad, center.getX(), center.getY()));
+
+
+		g.fillPath(p);
+
+		g.setFont(rswl->getTextHeight());
+		auto text = rswl->getDisplayString();
+		auto strWidth = g.getCurrentFont().getStringWidth(text);
+
+		r.setSize(strWidth + 4, rswl->getTextHeight() + 2);
+		r.setCentre(bounds.getCentre());
+
+		g.setColour(Colours::black);
+		g.fillRect(r);
+
+		g.setColour(Colours::white);
+		g.drawFittedText(text, r.toNearestInt(), juce::Justification::centred, 1);
+	}
 }
 void RotarySliderWithLabels::paint(juce::Graphics& g)
 {
@@ -58,6 +75,7 @@ void RotarySliderWithLabels::paint(juce::Graphics& g)
 
 	auto range = getRange();
 	auto sliderBounds = getSliderBounds();
+
 
 	g.setColour(Colours::red);
 	g.drawRect(getLocalBounds());
@@ -93,6 +111,10 @@ juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const
 	return r;
 }
 
+juce::String RotarySliderWithLabels::getDisplayString() const
+{
+	return juce::String(getValue());
+}
 //=============================================================================
 ResponseCurveComponent::ResponseCurveComponent(SimpleEQAudioProcessor& p)
 	: audioProcessor(p)
