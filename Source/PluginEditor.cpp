@@ -320,9 +320,9 @@ void ResponseCurveComponent::resized()
 
 	Graphics g(background);
 	Array<float> freqs{
-		20.f, 30.f, 40.f, 50.f, 100.f,
-		200.f, 300.f, 400.f, 500.f, 1000.f,
-		2000.f, 3000.f, 4000.f, 5000.f, 1000.f,
+		20.f, /*30.f, 40.f,*/ 50.f, 100.f,
+		200.f, /*300.f, 400.f,*/ 500.f, 1000.f,
+		2000.f, /*3000.f, 4000.f,*/ 5000.f, 1000.f,
 		20000.f
 	};
 
@@ -367,6 +367,41 @@ void ResponseCurveComponent::resized()
 	}
 
 	//g.drawRect(getAnalysisArea());
+
+	g.setColour(Colours::lightgrey);
+	const int fontHeight = 10;
+	g.setFont(fontHeight);
+
+	for (int i = 0; i < freqs.size(); i++)
+	{
+		auto f = freqs[i];
+		auto x = xs[i];
+
+		bool addK = false;
+		String str;
+		if (f >= 1000.f)
+		{
+			addK = true;
+			f /= 1000.f;
+		}
+
+		str << f;
+		if (addK)
+		{
+			str << "k";
+		}
+
+		str << "Hz";
+
+		auto textWidth = g.getCurrentFont().getStringWidth(str);
+
+		Rectangle<int> r;
+		r.setSize(textWidth, fontHeight);
+		r.setCentre(x, 0);
+		r.setY(1);
+
+		g.drawFittedText(str, r, juce::Justification::centred, 1);
+	}
 }
 
 juce::Rectangle<int> ResponseCurveComponent::getRenderArea()
