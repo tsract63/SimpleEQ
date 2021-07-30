@@ -62,6 +62,7 @@ struct ResponseCurveComponent : public juce::Component,
     void parameterValueChanged(int parameterIndex, float newValue) override;    
     void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
     void paint(juce::Graphics&)override;
+    void resized() override;
 
     void timerCallback() override;
 private:
@@ -70,6 +71,11 @@ private:
 
     MonoChain monoChain;
     void updateChain();
+
+    juce::Image background;
+
+    juce::Rectangle<int> getRenderArea();
+    juce::Rectangle<int> getAnalysisArea();
 };
 //==============================================================================
 /**
