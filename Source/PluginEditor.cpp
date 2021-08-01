@@ -181,8 +181,9 @@ juce::String RotarySliderWithLabels::getDisplayString() const
 	return str;
 }
 //=============================================================================
-ResponseCurveComponent::ResponseCurveComponent(SimpleEQAudioProcessor& p)
-	: audioProcessor(p)
+ResponseCurveComponent::ResponseCurveComponent(SimpleEQAudioProcessor& p) :
+	audioProcessor(p),
+	leftChannelFifo(&audioProcessor.leftChannelFifo)
 {
 	const auto& params = audioProcessor.getParameters();
 	for (auto param : params)
@@ -190,6 +191,8 @@ ResponseCurveComponent::ResponseCurveComponent(SimpleEQAudioProcessor& p)
 		param->addListener(this);
 	}
 
+	leftChannelFFTDataGenerator.changeOrder(FFTOrder::order2048);
+	monoBuffer.setSize(1, leftChannelFFTDataGenerator.getFFTSize());
 	updateChain();
 	startTimerHz(60);
 }
@@ -305,6 +308,10 @@ void ResponseCurveComponent::paint(juce::Graphics& g)
 		responsiveCurve.lineTo(responseArea.getX() + i, map(mags[i]));
 	}
 
+
+	g.setColour(Colours::blue);
+	g.strokePath(leftChannelFFTPath, PathStrokeType(1.f));
+
 	g.setColour(Colours::orange);
 	g.drawRoundedRectangle(getRenderArea().toFloat(), 4.f, 1.f);
 
@@ -342,7 +349,7 @@ void ResponseCurveComponent::resized()
 
 	g.setColour(Colours::dimgrey);
 
-	for( auto x : xs)
+	for (auto x : xs)
 	{
 		g.drawVerticalLine(x, top, bottom);
 	}
@@ -351,12 +358,12 @@ void ResponseCurveComponent::resized()
 	-24.f, -12.f, 0.f, 12.f, 24.f
 	};
 
-	
+
 	for (auto gDb : gain)
 	{
 		auto y = jmap(gDb, -24.f, 24.f, float(bottom), float(top));
 
-	
+
 		g.setColour(gDb == 0.f ? Colour(0u, 172u, 1u) : Colours::darkgrey);
 		g.drawHorizontalLine(y, left, right);
 	}
@@ -389,7 +396,7 @@ void ResponseCurveComponent::resized()
 			str << "k";
 		}
 
-		
+
 		str << "Hz";
 
 		auto textWidth = g.getCurrentFont().getStringWidth(str);
@@ -413,7 +420,7 @@ void ResponseCurveComponent::resized()
 				str << "+";
 			}
 
-			
+
 
 
 			str << gDb;
@@ -423,11 +430,11 @@ void ResponseCurveComponent::resized()
 
 			Rectangle<int> r;
 			r.setSize(textWidth, fontHeight);
-			
-			r.setX(getWidth()-textWidth			);
+
+			r.setX(getWidth() - textWidth);
 			r.setCentre(r.getCentreX(), y);
 
-			
+
 
 			g.setColour(gDb == 0.f ? Colour(0u, 172u, 1u) : Colours::lightgrey);
 
@@ -481,13 +488,76 @@ void ResponseCurveComponent::parameterValueChanged(int parameterIndex, float new
 
 void ResponseCurveComponent::timerCallback()
 {
+	juce::AudioBuffer<float> tempIncomingBuffer;
+
+	while (leftChannelFifo->getNumCompleteBuffersAvailable() > 0)
+	{
+		if (leftChannelFifo->getAudioBuffer(tempIncomingBuffer))
+		{
+			auto size = tempIncomingBuffer.getNumSamples();
+
+			juce::FloatVectorOperations::copy(
+				monoBuffer.getWritePointer(0, 0),
+				monoBuffer.getReadPointer(0, size),
+				monoBuffer.getNumSamples() - size);
+
+			juce::FloatVectorOperations::copy(
+				monoBuffer.getWritePointer(0, monoBuffer.getNumSamples() - size),
+				tempIncomingBuffer.getReadPointer(0, 0),
+				size);
+
+			leftChannelFFTDataGenerator.produceFFTDataForRendering(monoBuffer, -48.f);
+
+		}
+	}
+
+	/*
+	* if there are FFT data buffers to pull
+	*    if we can pull a buffef
+	*       generate a path
+	*/
+	const auto fftBounds = getAnalysisArea().toFloat();
+	const auto fftSize = leftChannelFFTDataGenerator.getFFTSize();
+
+	/*
+	48000 / 2048 = 23Hz <-- this is the bin width
+	*/
+	const auto binWidth = audioProcessor.getSampleRate() / (double)fftSize;
+
+
+	while (leftChannelFFTDataGenerator.getNumAvailableFFTDataBlocks() > 0)
+	{
+		std::vector<float>fftData;
+
+		if (leftChannelFFTDataGenerator.getFFTData(fftData))
+		{
+			pathProducer.generatePath(fftData, fftBounds, fftSize, binWidth, -48.f);
+		}
+
+	}
+
+	/*
+	While there are paths that can be pulled,
+	pull as many as can be pulled.
+
+	display the most recent path
+
+	*/
+
+	while (pathProducer.getNumPathsAvailable())
+	{
+		pathProducer.getPath(leftChannelFFTPath);
+	}
+
 	if (parametersChanged.compareAndSetBool(false, true))
 	{
 		updateChain();
 
-		repaint();
+		
 
 	}
+
+	repaint();
 }
 
 //==============================================================================
@@ -518,16 +588,16 @@ SimpleEQAudioProcessorEditor::SimpleEQAudioProcessorEditor(SimpleEQAudioProcesso
 
 	peakGainSlider.labels.add({ 0.f, "-24dB" });
 	peakGainSlider.labels.add({ 1.f, "+24dB" });
-	
+
 	peakQualitySlider.labels.add({ 0.f, "0.1" });
 	peakQualitySlider.labels.add({ 1.f, "10.0" });
-	
+
 	lowCutFreqSlider.labels.add({ 0.f, "20Hz" });
 	lowCutFreqSlider.labels.add({ 1.f, "20kHz" });
-	
+
 	highCutFreqSlider.labels.add({ 0.f, "20Hz" });
 	highCutFreqSlider.labels.add({ 1.f, "20kHz" });
-	
+
 	lowCutSlopeSlider.labels.add({ 0.f, "12" });
 	lowCutSlopeSlider.labels.add({ 1.f, "48" });
 
